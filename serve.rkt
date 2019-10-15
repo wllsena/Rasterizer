@@ -10,12 +10,9 @@
 
 (define (form-figure . stx)
   (match-let ([(list embed/url fig text fields ...) stx])
-    `(form ([action ,(embed/url (match fig
-                                  ['point  (draw point)]
-                                  ['line   (draw line)]
-                                  ['rect   (draw rect)]
-                                  ['triag  (draw rect)]
-                                  ['circle (draw circle)]))])
+    `(form ([action ,(embed/url (if (string=? fig "figures")
+                                    (figures)
+                                    (figure fig)))])
            ,text
            ,@(for/list ([i (in-list fields)])
                `(input ([name "number"] [placeholder ,i])))
@@ -29,16 +26,17 @@
              (body
               (h2   "Hello!")
 
-              ,(form-figure embed/url 'point "Point ------> "
-                            "X" "Y" "Color (standard: 1)")
-              ,(form-figure embed/url 'line "Line -------> "
-                            "X1" "Y1" "X2" "Y2" "Color (standard: 1)")
-              ,(form-figure embed/url 'rect "Rectangle -> "
-                            "X" "Y" "A" "B" "Fill? (standard: #f)" "Color (standard: 1)")
-              ,(form-figure embed/url 'triag "Triangle ---> "
-                            "X1" "Y1" "X2" "Y2" "X3" "Y3" "Fill? (standard: #f)" "Color (standard: 1)")
-              ,(form-figure embed/url 'circle "Circle -----> "
-                            "X" "Y" "R" "Fill? (standard: #f)" "Color (standard: 1)")
+              ,(form-figure embed/url "figures" "Figures ----> " "Racket syntax")
+              ,(form-figure embed/url "point" "Point ------> "
+                            "X" "Y" "Color (standard: (0,0,0))")
+              ,(form-figure embed/url "line" "Line -------> "
+                            "X1" "Y1" "X2" "Y2" "Color (standard: (0,0,0))")
+              ,(form-figure embed/url "circle" "Circle -----> "
+                            "X" "Y" "R" "Fill? (standard: #f)" "Color (standard: (0,0,0))")
+              ,(form-figure embed/url "rect" "Rectangle -> "
+                            "X" "Y" "A" "B" "Fill? (standard: #f)" "Color (standard: (0,0,0))")
+              ,(form-figure embed/url "trian" "Triangle ---> "
+                            "X1" "Y1" "X2" "Y2" "X3" "Y3" "Fill? (standard: #f)" "Color (standard: (0,0,0))")
 
               (table (form ([action ,(embed/url (undo))])
                            (input ([type "image"] [src "/undo.png"])))
