@@ -97,7 +97,7 @@
 (define-syntax-rule (update x y color)
   (array-set! grid (vector (add1 x) (add1 y)) color))
 
-(define-syntax-rule (in-line x1 y1 x2 y2 color)
+(define-syntax-rule (make-line x1 y1 x2 y2 color)
   (let* ([df-x   (- x2 x1)]
          [df-y   (- y2 y1)]
          [max-df (max (abs df-x) (abs df-y))]
@@ -108,7 +108,7 @@
               (+ y1 (round (* i dy)))
               color))))
 
-(define-syntax-rule (in-triangle x1 y1 x2 y2 x3 y3 color) ; ARRUMAR!!!
+(define-syntax-rule (in-triangle x1 y1 x2 y2 x3 y3 color)
   (match-let ([(list (cons lx ly) (cons mx my) (cons tx ty))
                (sort (list (cons x1 y1) (cons x2 y2) (cons x3 y3))
                      < #:key cdr)])
@@ -118,20 +118,18 @@
            [dxmt   (if (zero? df-mty) 0 (/ (- tx mx) df-mty))]
            [dxlt   (if (zero? df-lty) 0 (/ (- tx lx) df-lty))]
            [dxlm   (if (zero? df-lmy) 0 (/ (- mx lx) df-lmy))]
-           [var    (if (> (* my dxlt) mx) 1 -1)]
+           [proj-x (+ lx (* my dxlt))]
+           [var    (if (> proj-x mx) 1 -1)]
            [-var   (- var)])
-      (for ([i (in-range 0 df-lmy)])
+      (for ([i (in-range 1 df-lmy)])
         (let ([y (+ ly i)])
-          (for ([x (in-range (+ lx (round (* i dxlm)))
-                             (+ lx (round (* i dxlt)) var)
-                             var)])
-            (update x y color))))
-      (for ([i (in-range 0 (add1 df-mty))])
+          (for ([k (in-range dxlm dxlt (/ var i))])
+            (update (+ lx (round (* i k))) y color))))
+      (make-line mx my proj-x my color)
+      (for ([i (in-range 1 df-mty)])
         (let ([y (- ty i)])
-          (for ([x (in-range (- tx (round (* i dxmt)))
-                             (- tx (round (* i dxlt)) -var)
-                             var)])
-            (update x y color)))))))
+          (for ([k (in-range dxmt dxlt (/ -var i))])
+            (update (- tx (round (* i k))) y color)))))))
 
 (define-syntax-rule (grid->data-uri)
   (array->data-uri grid len-x len-y len-p))
@@ -159,7 +157,7 @@
 (define (draw-line coord)
   (match-let ([(list x1 y1 x2 y2 color) coord])
     (when (check-points () (x1 y1) (x2 y2))
-      (in-line x1 y1 x2 y2 color))))
+      (make-line x1 y1 x2 y2 color))))
 
 (define (circle-while x0 y0 d x y color)
   (update (+ x0 x) (+ y0 y) color)
@@ -210,16 +208,16 @@
                      [y (in-range y1 y2)])
                 (update x y color))
               (begin
-                (in-line x1 y1 x2 y1 color)
-                (in-line x1 y1 x1 y2 color)
-                (in-line x2 y1 x2 y2 color)
-                (in-line x1 y2 x2 y2 color))))))))
+                (make-line x1 y1 x2 y1 color)
+                (make-line x1 y1 x1 y2 color)
+                (make-line x2 y1 x2 y2 color)
+                (make-line x1 y2 x2 y2 color))))))))
 
 (define (draw-trian coord)
   (match-let ([(list x1 y1 x2 y2 x3 y3 fill? color) coord])
     (when (check-points () (x1 y1) (x2 y2) (x3 y3))
       (when fill?
-        (in-triangle x1 y1 x2 x2 x3 y3 color))
-      (in-line x1 y1 x2 y2 color)
-      (in-line x1 y1 x3 y3 color)
-      (in-line x2 y2 x3 y3 color))))
+        (in-triangle x1 y1 x2 y2 x3 y3 color))
+      (make-line x1 y1 x2 y2 color)
+      (make-line x1 y1 x3 y3 color)
+      (make-line x2 y2 x3 y3 color))))
