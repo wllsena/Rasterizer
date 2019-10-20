@@ -18,8 +18,8 @@
 (define-syntax-rule (array->data-uri arr len-x len-y len-p)
   (pict->data-uri
    (apply above
-          (for/list ([y (in-range len-x)])
+          (for/list ([y (in-range len-y)])
             (apply beside
-                   (for/list ([x (in-range len-y)])
+                   (for/list ([x (in-range len-x)])
                      (rectangle len-p len-p 'solid
                                 (bin->color (array-ref arr (vector x y))))))))))

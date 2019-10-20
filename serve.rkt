@@ -22,9 +22,9 @@
   (send/suspend/dispatch
    (λ (embed/url)
      (response/xexpr
-      `(html (head (title "Renderer"))
+      `(html (head (title "Rasterizer"))
              (body
-              (h2   "Hello!")
+              (h2   "Rasterizer")
 
               ,(form-figure embed/url "figures" "Figures ----> " "Racket syntax")
               ,(form-figure embed/url "point" "Point ------> "
@@ -37,6 +37,8 @@
                             "X" "Y" "A" "B" "Fill? (standard: #f)" "Color (standard: (0,0,0))")
               ,(form-figure embed/url "trian" "Triangle ---> "
                             "X1" "Y1" "X2" "Y2" "X3" "Y3" "Fill? (standard: #f)" "Color (standard: (0,0,0))")
+              ,(form-figure embed/url "curve" "Curve ------> "
+                            "X1" "Y1" "X2" "Y2" "X3" "Y3" "Length (standard: 1)" "Color (standard: (0,0,0))")
 
               (table (form ([action ,(embed/url (undo))])
                            (input ([type "image"] [src "/undo.png"])))

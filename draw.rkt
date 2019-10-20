@@ -25,7 +25,7 @@
 (define-syntax (check-points stx)
   #`(if #,(syntax-case stx ()
             [(_ (nums ...) (xs ys) ...)
-             #'(or (not nums) ... (<= nums 0) ...
+             #'(or (not nums) ... (< nums 0) ...
                    (not xs) ... (not ys) ...
                    (for/or ([i (in-combinations (list (cons xs ys) ...) 2)])
                      (equal? (car i) (cadr i)))
@@ -48,7 +48,8 @@
     ["line"   draw-line]
     ["circle" draw-circle]
     ["rect"   draw-rect]
-    ["trian"  draw-trian]))
+    ["trian"  draw-trian]
+    ["curve"  draw-curve]))
 
 (define-syntax-rule (figure fig)
   (λ (req)
@@ -103,7 +104,7 @@
          [max-df (max (abs df-x) (abs df-y))]
          [dx     (/ df-x max-df)]
          [dy     (/ df-y max-df)])
-    (for ([i (in-range 0 (add1 max-df))])
+    (for ([i (in-range (add1 max-df))])
       (update (+ x1 (round (* i dx)))
               (+ y1 (round (* i dy)))
               color))))
@@ -118,18 +119,19 @@
            [dxmt   (if (zero? df-mty) 0 (/ (- tx mx) df-mty))]
            [dxlt   (if (zero? df-lty) 0 (/ (- tx lx) df-lty))]
            [dxlm   (if (zero? df-lmy) 0 (/ (- mx lx) df-lmy))]
-           [proj-x (+ lx (* my dxlt))]
+           [proj-x (cond
+                     [(zero? df-mty) tx]
+                     [(zero? df-lmy) lx]
+                     [else (+ lx (* my dxlt))])]
            [var    (if (> proj-x mx) 1 -1)]
            [-var   (- var)])
       (for ([i (in-range 1 df-lmy)])
-        (let ([y (+ ly i)])
-          (for ([k (in-range dxlm dxlt (/ var i))])
-            (update (+ lx (round (* i k))) y color))))
+        (make-line (round (+ lx (* i dxlm))) (+ ly i)
+                   (round (+ lx (* i dxlt))) (+ ly i) color))
       (make-line mx my proj-x my color)
       (for ([i (in-range 1 df-mty)])
-        (let ([y (- ty i)])
-          (for ([k (in-range dxmt dxlt (/ -var i))])
-            (update (- tx (round (* i k))) y color)))))))
+        (make-line (round (- tx (* i dxmt))) (- ty i)
+                   (round (- tx (* i dxlt))) (- ty i) color)))))
 
 (define-syntax-rule (grid->data-uri)
   (array->data-uri grid len-x len-y len-p))
@@ -202,7 +204,7 @@
     (when (check-points (a b) (x1 y1))
       (let ([x2 (+ a x1)]
             [y2 (+ b y1)])
-        (when (check-points #f (x1 y1) ((sub1 x2) (sub1 y2)))
+        (when (check-points #f ((sub1 x2) (sub1 y2)))
           (if fill?
               (for* ([x (in-range x1 x2)]
                      [y (in-range y1 y2)])
@@ -221,3 +223,34 @@
       (make-line x1 y1 x2 y2 color)
       (make-line x1 y1 x3 y3 color)
       (make-line x2 y2 x3 y3 color))))
+
+(define-syntax-rule (amount-pts x1 y1 x2 y2 x3 y3)
+  (+ (integer-sqrt (+ (expt (- x2 x1) 2)
+                      (expt (- y2 y1) 2)))
+     (integer-sqrt (+ (expt (- x2 x3) 2)
+                      (expt (- y2 y3) 2)))))
+
+(define (draw-curve coord)
+  (match-let*([(list x1 y1 x2 y2 x3 y3 len color) coord]
+              [len                                (cond [len] [1])])
+    (when (check-points (len) (x1 y1) (x2 y2) (x3 y3))
+      (let* ([df-x   (- x2 (/ (+ x1 x3) 2))]
+             [df-y   (- y2 (/ (+ y1 y3) 2))]
+             [sum-df (+ (abs df-x) (abs df-y))]
+             [dx     (/ df-x sum-df)]
+             [dy     (/ df-y sum-df)]
+             [amount (/ 1 (amount-pts  x1 y1 x2 y2 x3 y3))])
+        (when (check-points #f ((+ (* dx len) x2) (+ (* dy len) y2)))
+          (let ([fx (λ (t) (+ (*   x1 (expt (- 1 t) 2))
+                              (* 2 x2       (- 1 t)    t)
+                              (*   x3                  (expt t 2))))]
+                [fy (λ (t) (+ (*   y1 (expt (- 1 t) 2))
+                              (* 2 y2       (- 1 t)    t)
+                              (*   y3                  (expt t 2))))])
+            (for ([t (in-range 0 (add1 amount) amount)])
+              (let ([x (round (fx t))]
+                    [y (round (fy t))])
+                (for ([i (in-range len)])
+                  (update (+ x (round (* i dx)))
+                          (+ y (round (* i dy)))
+                          color))))))))))
