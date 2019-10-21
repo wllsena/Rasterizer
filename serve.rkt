@@ -2,8 +2,7 @@
 
 (require web-server/servlet
          web-server/servlet-env
-         "draw.rkt"
-         (for-syntax racket/syntax))
+         "draw.rkt")
 
 (provide make-grid
          app)
@@ -26,7 +25,8 @@
              (body
               (h2   "Rasterizer")
 
-              ,(form-figure embed/url "figures" "Figures ----> " "Racket syntax")
+              ,(form-figure embed/url "figures" "Figures ----> "
+                            "Racket syntax")
               ,(form-figure embed/url "point" "Point ------> "
                             "X" "Y" "Color (standard: (0,0,0))")
               ,(form-figure embed/url "line" "Line -------> "
@@ -49,4 +49,4 @@
 (define (app)
   (serve/servlet (λ _ (serve))
                  #:extra-files-paths (list ".")
-                 #:servlet-path "/serve.rkt"))
+                 #:servlet-path "/Rasterizer"))
