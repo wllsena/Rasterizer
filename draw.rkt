@@ -41,12 +41,13 @@
           #t)))
 
 (define-syntax-rule (extract-figs text)
-  (map string-split
-       (string-split
-        (string-replace
-         (substring text 2 (- (string-length text) 2))
-         ") (" "*")
-        "*")))
+  (let ([text* (string-normalize-spaces text)])
+    (map string-split
+         (string-split
+          (string-replace
+           (substring text 2 (- (string-length text*) 2))
+           ") (" "*")
+          "*"))))
 
 (define-syntax-rule (figures)
   (λ (req)
